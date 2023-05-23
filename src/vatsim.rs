@@ -78,6 +78,7 @@ pub enum FlightRule {
     I,
     V,
     S,
+    D,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

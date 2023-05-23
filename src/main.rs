@@ -1,15 +1,10 @@
 use env_logger::{Builder, Env};
-use log::{info, warn};
+use log::{debug, info};
 
-use metrics::{
-    decrement_gauge, describe_counter, describe_gauge, describe_histogram, gauge, histogram,
-    increment_counter, increment_gauge,
-};
+use metrics::gauge;
 
 use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::MetricKindMask;
-
-use chrono::{DateTime, TimeZone, Utc};
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -30,33 +25,45 @@ async fn main() -> Result<(), reqwest::Error> {
         .with_http_listener(addr)
         .idle_timeout(
             MetricKindMask::COUNTER | MetricKindMask::GAUGE,
-            Some(Duration::from_secs(20)),
+            Some(Duration::from_secs(40)),
         )
         .install()
         .expect("failed to install Prometheus recorder");
 
-    describe_gauge!("airport_departures_current", "foo");
-    describe_gauge!("airport_arrivals_current", "foo");
-
     let vatsim_client = reqwest::Client::new();
-    let mut vatsim_lastupdate: DateTime<Utc> = Utc.timestamp_millis(0);
+    let mut last_etag: String = String::from("");
 
     loop {
         //println!("{:#?}", vatsim_data);
-        let vatsim_data: vatsim::VatsimStatus = vatsim_client
+        let response: reqwest::Response = vatsim_client
             .get("https://data.vatsim.net/v3/vatsim-data.json")
+            .header(reqwest::header::IF_NONE_MATCH, last_etag)
             .send()
-            .await?
-            .json()
             .await?;
 
-        if vatsim_data.general.update_timestamp <= vatsim_lastupdate {
-            warn!("vatsim data stale");
+        last_etag = String::from(
+            response
+                .headers()
+                .get(reqwest::header::ETAG)
+                .as_ref()
+                .unwrap()
+                .to_str()
+                .unwrap(),
+        );
+        let status = response.status();
+
+        if status == 304 {
+            debug!("vatsim data still cached");
             thread::sleep(Duration::from_millis(1000));
             continue;
         }
-        vatsim_lastupdate = vatsim_data.general.update_timestamp;
-        info!("new vatsim status data {}", vatsim_lastupdate);
+
+        let vatsim_data: vatsim::VatsimStatus = response.json().await?;
+
+        info!(
+            "new vatsim status data {}",
+            vatsim_data.general.update_timestamp
+        );
 
         let mut arr_map: HashMap<&String, u32> = HashMap::new();
         vatsim_data
@@ -69,7 +76,7 @@ async fn main() -> Result<(), reqwest::Error> {
             });
 
         for (icao, c) in &arr_map {
-            gauge!("airport_arrivals_current", *c as f64, "icao" => String::from(*icao), "state" => "online");
+            gauge!("vatsim_airport_arrivals_current", *c as f64, "icao" => String::from(*icao), "state" => "online");
         }
 
         let mut arr_prefile_map: HashMap<&String, u32> = HashMap::new();
@@ -83,7 +90,7 @@ async fn main() -> Result<(), reqwest::Error> {
             });
 
         for (icao, c) in &arr_prefile_map {
-            gauge!("airport_arrivals_current", *c as f64, "icao" => String::from(*icao), "state" => "prefiled");
+            gauge!("vatsim_airport_arrivals_current", *c as f64, "icao" => String::from(*icao), "state" => "prefiled");
         }
 
         let mut adep_map: HashMap<&String, u32> = HashMap::new();
@@ -97,7 +104,7 @@ async fn main() -> Result<(), reqwest::Error> {
             });
 
         for (icao, c) in &adep_map {
-            gauge!("airport_departures_current", *c as f64, "icao" => String::from(*icao), "state" => "online");
+            gauge!("vatsim_airport_departures_current", *c as f64, "icao" => String::from(*icao), "state" => "online");
         }
 
         let mut adep_prefile_map: HashMap<&String, u32> = HashMap::new();
@@ -111,9 +118,34 @@ async fn main() -> Result<(), reqwest::Error> {
             });
 
         for (icao, c) in &adep_prefile_map {
-            gauge!("airport_departures_current", *c as f64, "icao" => String::from(*icao), "state" => "prefiled");
+            gauge!("vatsim_airport_departures_current", *c as f64, "icao" => String::from(*icao), "state" => "prefiled");
         }
 
-        thread::sleep(Duration::from_millis(1000));
+        for controller in vatsim_data.controllers {
+            gauge!("vatsim_controller_online", 1.0,
+              "callsign" => controller.callsign, "cid" => controller.cid.to_string(), "name" => controller.name,
+              "facility" => vatsim_data.facilities.iter().filter(|f| f.id == controller.facility).next().unwrap().short.clone()
+            );
+        }
+
+        for pilot in vatsim_data.pilots {
+            gauge!("vatsim_pilot_groundspeed", pilot.groundspeed as f64,
+              "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
+            );
+            gauge!("vatsim_pilot_altitude", pilot.altitude as f64,
+              "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
+            );
+            gauge!("vatsim_pilot_heading", pilot.heading as f64,
+              "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
+            );
+            gauge!("vatsim_pilot_latitude", pilot.latitude as f64,
+              "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
+            );
+            gauge!("vatsim_pilot_longitude", pilot.longitude as f64,
+              "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
+            );
+        }
+
+        thread::sleep(Duration::from_millis(15000));
     }
 }
