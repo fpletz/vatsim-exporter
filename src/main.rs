@@ -15,7 +15,7 @@ mod vatsim;
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
-    let _log = Builder::from_env(Env::default().default_filter_or("info")).init();
+    Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let addr_raw = "[::]:9185";
     let addr: SocketAddr = addr_raw.parse().expect("can not parse listen addr");
@@ -34,7 +34,6 @@ async fn main() -> Result<(), reqwest::Error> {
     let mut last_etag: String = String::from("");
 
     loop {
-        //println!("{:#?}", vatsim_data);
         let response: reqwest::Response = vatsim_client
             .get("https://data.vatsim.net/v3/vatsim-data.json")
             .header(reqwest::header::IF_NONE_MATCH, last_etag)
@@ -65,7 +64,7 @@ async fn main() -> Result<(), reqwest::Error> {
             vatsim_data.general.update_timestamp
         );
 
-        let mut arr_map: HashMap<&String, u32> = HashMap::new();
+        let mut arr_map: HashMap<&str, u32> = HashMap::new();
         vatsim_data
             .pilots
             .iter()
@@ -75,11 +74,11 @@ async fn main() -> Result<(), reqwest::Error> {
                 *arr_map.entry(&x.arrival).or_default() += 1;
             });
 
-        for (icao, c) in &arr_map {
-            gauge!("vatsim_airport_arrivals_current", *c as f64, "icao" => String::from(*icao), "state" => "online");
+        for (icao, c) in arr_map {
+            gauge!("vatsim_airport_arrivals_current", c as f64, "icao" => String::from(icao), "state" => "online");
         }
 
-        let mut arr_prefile_map: HashMap<&String, u32> = HashMap::new();
+        let mut arr_prefile_map: HashMap<&str, u32> = HashMap::new();
         vatsim_data
             .prefiles
             .iter()
@@ -89,11 +88,11 @@ async fn main() -> Result<(), reqwest::Error> {
                 *arr_prefile_map.entry(&x.arrival).or_default() += 1;
             });
 
-        for (icao, c) in &arr_prefile_map {
-            gauge!("vatsim_airport_arrivals_current", *c as f64, "icao" => String::from(*icao), "state" => "prefiled");
+        for (icao, c) in arr_prefile_map {
+            gauge!("vatsim_airport_arrivals_current", c as f64, "icao" => String::from(icao), "state" => "prefiled");
         }
 
-        let mut adep_map: HashMap<&String, u32> = HashMap::new();
+        let mut adep_map: HashMap<&str, u32> = HashMap::new();
         vatsim_data
             .pilots
             .iter()
@@ -103,11 +102,11 @@ async fn main() -> Result<(), reqwest::Error> {
                 *adep_map.entry(&x.departure).or_default() += 1;
             });
 
-        for (icao, c) in &adep_map {
-            gauge!("vatsim_airport_departures_current", *c as f64, "icao" => String::from(*icao), "state" => "online");
+        for (icao, c) in adep_map {
+            gauge!("vatsim_airport_departures_current", c as f64, "icao" => String::from(icao), "state" => "online");
         }
 
-        let mut adep_prefile_map: HashMap<&String, u32> = HashMap::new();
+        let mut adep_prefile_map: HashMap<&str, u32> = HashMap::new();
         vatsim_data
             .prefiles
             .iter()
@@ -117,8 +116,8 @@ async fn main() -> Result<(), reqwest::Error> {
                 *adep_prefile_map.entry(&x.departure).or_default() += 1;
             });
 
-        for (icao, c) in &adep_prefile_map {
-            gauge!("vatsim_airport_departures_current", *c as f64, "icao" => String::from(*icao), "state" => "prefiled");
+        for (icao, c) in adep_prefile_map {
+            gauge!("vatsim_airport_departures_current", c as f64, "icao" => String::from(icao), "state" => "prefiled");
         }
 
         for controller in vatsim_data.controllers {
@@ -138,14 +137,14 @@ async fn main() -> Result<(), reqwest::Error> {
             gauge!("vatsim_pilot_heading", pilot.heading as f64,
               "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
             );
-            gauge!("vatsim_pilot_latitude", pilot.latitude as f64,
+            gauge!("vatsim_pilot_latitude", pilot.latitude,
               "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
             );
-            gauge!("vatsim_pilot_longitude", pilot.longitude as f64,
+            gauge!("vatsim_pilot_longitude", pilot.longitude,
               "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
             );
         }
 
-        thread::sleep(Duration::from_millis(15000));
+        thread::sleep(Duration::from_millis(60000));
     }
 }
