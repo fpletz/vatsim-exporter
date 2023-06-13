@@ -64,6 +64,7 @@
             rustPackages.clippy
             rustc
             rustfmt
+            sops
             tanka
           ];
           RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
