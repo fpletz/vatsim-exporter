@@ -34,9 +34,11 @@ async fn main() -> Result<(), reqwest::Error> {
     let mut last_etag: String = String::from("");
 
     loop {
+        debug!("requesting vatsim data");
         let response: reqwest::Response = vatsim_client
             .get("https://data.vatsim.net/v3/vatsim-data.json")
             .header(reqwest::header::IF_NONE_MATCH, last_etag)
+            .timeout(Duration::from_secs(5))
             .send()
             .await?;
 
@@ -53,7 +55,7 @@ async fn main() -> Result<(), reqwest::Error> {
 
         if status == 304 {
             debug!("vatsim data still cached");
-            thread::sleep(Duration::from_millis(1000));
+            thread::sleep(Duration::from_millis(60000));
             continue;
         }
 
