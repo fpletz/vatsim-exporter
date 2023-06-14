@@ -5,7 +5,7 @@
     "name": "environments/default"
   },
   "spec": {
-    "namespace": "namaste-globin",
+    "namespace": "vatsim-exporter",
     "resourceDefaults": {},
     "expectVersions": {}
   }
