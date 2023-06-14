@@ -1,7 +1,8 @@
+use chrono::Utc;
 use env_logger::{Builder, Env};
 use log::{debug, info};
 
-use metrics::gauge;
+use metrics::{gauge, counter};
 
 use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::MetricKindMask;
@@ -123,7 +124,8 @@ async fn main() -> Result<(), reqwest::Error> {
         }
 
         for controller in vatsim_data.controllers {
-            gauge!("vatsim_controller_online", 1.0,
+            let time_online = Utc::now() - controller.logon_time;
+            counter!("vatsim_controller_online_seconds_count", time_online.num_seconds() as u64,
               "callsign" => controller.callsign, "cid" => controller.cid.to_string(), "name" => controller.name,
               "facility" => vatsim_data.facilities.iter().filter(|f| f.id == controller.facility).next().unwrap().short.clone()
             );
