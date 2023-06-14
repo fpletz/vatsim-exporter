@@ -21,7 +21,7 @@ stages:
 exporter-image:
   extends: .image
   variables:
-    IMAGE_NAME: vatsim-prometheus-exporter
+    IMAGE_NAME: vatsim-exporter
 
 push-production:
   stage: deploy

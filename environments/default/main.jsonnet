@@ -11,7 +11,7 @@ function(secrets_yaml) {
     local config = self,
     secrets: std.native('parseYaml')(secrets_yaml)[0],
     name: 'vatsim-exporter',
-    image: 'registry.git.mayflower.de/franz.pletz/vatsim-exporter/vatsim-prometheus-exporter:%s' % std.extVar('commit_hash'),
+    image: 'registry.git.mayflower.de/franz.pletz/vatsim-exporter/vatsim-exporter:%s' % std.extVar('commit_hash'),
   },
 
   deployment: deployment.new(

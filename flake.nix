@@ -27,20 +27,20 @@
           inherit src; pname = "namaste";
           buildInputs = with pkgs; [ protobuf ];
         };
-        vatsim-prometheus-exporter = craneLib.buildPackage {
+        vatsim-exporter = craneLib.buildPackage {
           inherit src cargoArtifacts;
         };
       in
       {
         inherit pkgs;
         packages = rec {
-          default = vatsim-prometheus-exporter;
+          default = vatsim-exporter;
 
           dockerImages = {
-            vatsim-prometheus-exporter = pkgs.dockerTools.buildImage {
-              name = "vatsim-prometheus-exporter";
+            vatsim-exporter = pkgs.dockerTools.buildImage {
+              name = "vatsim-exporter";
               tag = "latest";
-              copyToRoot = [ vatsim-prometheus-exporter ];
+              copyToRoot = [ vatsim-exporter ];
 
               config = {
                 Cmd = [ "/bin/vatsim-exporter" ];
