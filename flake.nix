@@ -2,7 +2,7 @@
   description = "VATSIM Prometheus Exporter";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     utils.url = "github:numtide/flake-utils";
     argocd-nix-flakes-plugin = {
       url = "github:mayflower/argocd-nix-flakes-plugin";
@@ -24,8 +24,7 @@
 
         src = craneLib.cleanCargoSource ./.;
         cargoArtifacts = craneLib.buildDepsOnly {
-          inherit src; pname = "namaste";
-          buildInputs = with pkgs; [ protobuf ];
+          inherit src; pname = "vastsim-exporter";
         };
         vatsim-exporter = craneLib.buildPackage {
           inherit src cargoArtifacts;
@@ -33,7 +32,7 @@
       in
       {
         inherit pkgs;
-        packages = rec {
+        packages = {
           default = vatsim-exporter;
 
           dockerImages = {
