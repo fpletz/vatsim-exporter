@@ -16,7 +16,7 @@ where
 
 pub type Cid = u32;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Atis {
     pub atis_code: Option<String>,
     pub callsign: String,
@@ -33,7 +33,7 @@ pub struct Atis {
     pub visual_range: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Controller {
     pub callsign: String,
     pub cid: Cid,
@@ -49,14 +49,14 @@ pub struct Controller {
     pub visual_range: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Facility {
     pub id: u8,
     pub long: String,
     pub short: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VatsimGeneral {
     pub connected_clients: u32,
     pub reload: u8,
@@ -66,14 +66,14 @@ pub struct VatsimGeneral {
     pub version: u8,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PilotRating {
     pub id: u8,
     pub long_name: String,
     pub short_name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum FlightRule {
     I,
     V,
@@ -81,7 +81,7 @@ pub enum FlightRule {
     D,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FlightPlan {
     pub aircraft: String,
     pub aircraft_faa: String,
@@ -101,7 +101,7 @@ pub struct FlightPlan {
     pub route: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Pilot {
     pub altitude: i32,
     pub callsign: String,
@@ -122,7 +122,7 @@ pub struct Pilot {
     pub transponder: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Prefile {
     pub callsign: String,
     pub cid: Cid,
@@ -131,7 +131,7 @@ pub struct Prefile {
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Server {
     pub client_connections_allowed: bool,
     pub hostname_or_ip: String,
@@ -141,7 +141,7 @@ pub struct Server {
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VatsimStatus {
     pub general: VatsimGeneral,
     pub pilots: Vec<Pilot>,
