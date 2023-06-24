@@ -6,7 +6,7 @@ where
     D: Deserializer<'de>,
 {
     let mut s = String::deserialize(deserializer)?;
-    if !s.ends_with("Z") {
+    if !s.ends_with('Z') {
         // no ms present :(
         s.push_str(".0Z");
     }

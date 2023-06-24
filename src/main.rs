@@ -73,7 +73,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         .pilots
         .iter()
         .filter_map(|pilot| pilot.flight_plan.as_ref())
-        .filter(|fpl| fpl.arrival.len() > 0)
+        .filter(|fpl| !fpl.arrival.is_empty())
         .for_each(|x| {
             *arr_map.entry(&x.arrival).or_default() += 1;
         });
@@ -87,7 +87,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         .prefiles
         .iter()
         .map(|pf| &pf.flight_plan)
-        .filter(|fpl| fpl.arrival.len() > 0)
+        .filter(|fpl| !fpl.arrival.is_empty())
         .for_each(|x| {
             *arr_prefile_map.entry(&x.arrival).or_default() += 1;
         });
@@ -101,7 +101,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         .pilots
         .iter()
         .filter_map(|pilot| pilot.flight_plan.as_ref())
-        .filter(|fpl| fpl.departure.len() > 0)
+        .filter(|fpl| !fpl.departure.is_empty())
         .for_each(|x| {
             *adep_map.entry(&x.departure).or_default() += 1;
         });
@@ -115,7 +115,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         .prefiles
         .iter()
         .map(|pf| &pf.flight_plan)
-        .filter(|fpl| fpl.departure.len() > 0)
+        .filter(|fpl| !fpl.departure.is_empty())
         .for_each(|x| {
             *adep_prefile_map.entry(&x.departure).or_default() += 1;
         });
@@ -128,7 +128,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         let time_online = Utc::now() - controller.logon_time;
         counter!("vatsim_controller_online_seconds_count", time_online.num_seconds() as u64,
           "callsign" => controller.callsign.clone(), "cid" => controller.cid.to_string(), "name" => controller.name.clone(),
-          "facility" => vatsim_data.facilities.iter().filter(|f| f.id == controller.facility).next().unwrap().short.clone()
+          "facility" => vatsim_data.facilities.iter().find(|f| f.id == controller.facility).unwrap().short.clone()
         );
     }
 
@@ -164,7 +164,7 @@ async fn get_vatsim_metrics(State(state): State<SharedState>) -> String {
             + chrono::Duration::seconds(40)
             < Utc::now()
     {
-        if !app_state.vatsim_data.is_none() {
+        if app_state.vatsim_data.is_some() {
             debug!(
                 "trying to fetch new vatsim data: {} vs {}",
                 app_state
@@ -224,8 +224,7 @@ fn app() -> axum::Router {
 async fn main() {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let addr =
-        SocketAddr::from(("[::]:9185".parse() as Result<SocketAddr, AddrParseError>).unwrap());
+    let addr = ("[::]:9185".parse() as Result<SocketAddr, AddrParseError>).unwrap();
 
     axum::Server::bind(&addr)
         .serve(app().into_make_service())
