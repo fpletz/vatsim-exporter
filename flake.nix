@@ -16,57 +16,63 @@
     };
   };
 
-  outputs = { self, nixpkgs, utils, crane, argocd-nix-flakes-plugin, ... }:
-    utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-        craneLib = crane.lib.${system};
+  outputs = {
+    self,
+    nixpkgs,
+    utils,
+    crane,
+    argocd-nix-flakes-plugin,
+    ...
+  }:
+    utils.lib.eachDefaultSystem (system: let
+      pkgs = import nixpkgs {inherit system;};
+      craneLib = crane.lib.${system};
 
-        src = craneLib.cleanCargoSource ./.;
-        cargoArtifacts = craneLib.buildDepsOnly {
-          inherit src; pname = "vastsim-exporter";
-        };
-        vatsim-exporter = craneLib.buildPackage {
-          inherit src cargoArtifacts;
-        };
-      in
-      {
-        inherit pkgs;
-        packages = {
-          default = vatsim-exporter;
+      src = craneLib.cleanCargoSource ./.;
+      cargoArtifacts = craneLib.buildDepsOnly {
+        inherit src;
+        pname = "vastsim-exporter";
+      };
+      vatsim-exporter = craneLib.buildPackage {
+        inherit src cargoArtifacts;
+      };
+    in {
+      inherit pkgs;
+      packages = {
+        default = vatsim-exporter;
 
-          dockerImages = {
-            vatsim-exporter = pkgs.dockerTools.buildImage {
-              name = "vatsim-exporter";
-              tag = "latest";
-              copyToRoot = [ vatsim-exporter ];
+        dockerImages = {
+          vatsim-exporter = pkgs.dockerTools.buildImage {
+            name = "vatsim-exporter";
+            tag = "latest";
+            copyToRoot = [vatsim-exporter];
 
-              config = {
-                Cmd = [ "/bin/vatsim-exporter" ];
-                ExposedPorts."9185/tcp" = {};
-              };
+            config = {
+              Cmd = ["/bin/vatsim-exporter"];
+              ExposedPorts."9185/tcp" = {};
             };
           };
         };
+      };
 
-        apps = {
-          inherit (argocd-nix-flakes-plugin.apps.${system}) tankaShow tankaEval;
-        };
+      apps = {
+        inherit (argocd-nix-flakes-plugin.apps.${system}) tankaShow tankaEval;
+      };
 
-        devShells.default = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [
-            cargo
-            cargo-watch
-            jsonnet
-            jsonnet-bundler
-            rust-analyzer
-            rustPackages.clippy
-            rustc
-            rustfmt
-            sops
-            tanka
-          ];
-          RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
-        };
-      });
+      devShells.default = pkgs.mkShell {
+        nativeBuildInputs = with pkgs; [
+          cargo
+          cargo-watch
+          jsonnet
+          jsonnet-bundler
+          rust-analyzer
+          rustPackages.clippy
+          rustc
+          rustfmt
+          sops
+          tanka
+        ];
+        RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
+      };
+    });
 }
