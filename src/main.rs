@@ -9,7 +9,7 @@ use env_logger::{Builder, Env};
 use log::{debug, error, info};
 
 use axum::{extract::State, routing::get, Json};
-use metrics::{counter, gauge};
+use metrics::{absolute_counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
 use reqwest::{header, Client, StatusCode};
@@ -126,7 +126,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
 
     for controller in &vatsim_data.controllers {
         let time_online = Utc::now() - controller.logon_time;
-        counter!("vatsim_controller_online_seconds_count", time_online.num_seconds() as u64,
+        absolute_counter!("vatsim_controller_online_seconds_count", time_online.num_seconds() as u64,
           "callsign" => controller.callsign.clone(), "cid" => controller.cid.to_string(), "name" => controller.name.clone(),
           "facility" => vatsim_data.facilities.iter().find(|f| f.id == controller.facility).unwrap().short.clone()
         );
