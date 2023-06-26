@@ -41,16 +41,14 @@
       packages = {
         default = vatsim-exporter;
 
-        dockerImages = {
-          vatsim-exporter = pkgs.dockerTools.buildImage {
-            name = "vatsim-exporter";
-            tag = "latest";
-            copyToRoot = [vatsim-exporter];
+        dockerImage = pkgs.dockerTools.buildImage {
+          name = "vatsim-exporter";
+          tag = "latest";
+          copyToRoot = [vatsim-exporter];
 
-            config = {
-              Cmd = ["/bin/vatsim-exporter"];
-              ExposedPorts."9185/tcp" = {};
-            };
+          config = {
+            Cmd = ["/bin/vatsim-exporter"];
+            ExposedPorts."9185/tcp" = {};
           };
         };
       };
@@ -74,5 +72,48 @@
         ];
         RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
       };
-    });
+
+      formatter = pkgs.alejandra;
+    })
+    // (utils.lib.eachSystem ["x86_64-linux" "aarch64-linux"] (system:
+      let pkgs = import nixpkgs { inherit system; }; in {
+      checks.nixos = pkgs.nixosTest {
+        name = "vatsim-exporter";
+        nodes.server = { ... }: {
+          imports = [ self.nixosModules.default ];
+          services.vatsim-exporter.enable = true;
+        };
+        testScript = ''
+          start_all()
+          server.wait_for_unit("vatsim-exporter.service")
+        '';
+      };
+    })) // {
+      nixosModules.default = {
+        config,
+        lib,
+        pkgs,
+        ...
+      }: let
+        cfg = config.services.vatsim-exporter;
+      in {
+        options = {
+          services.vatsim-exporter = {
+            enable = lib.mkEnableOption "VATSIM Prometheus Exporter";
+          };
+        };
+
+        config = lib.mkIf cfg.enable {
+          systemd.services.vatsim-exporter = {
+            wantedBy = ["multi-user.target"];
+            serviceConfig = {
+              ExecStart = "${self.packages.${config.nixpkgs.system}.default}/bin/vatsim-exporter";
+              DynamicUser = true;
+              Restart = "always";
+              RestartSec = "2s";
+            };
+          };
+        };
+      };
+    };
 }

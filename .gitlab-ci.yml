@@ -12,7 +12,7 @@ stages:
     - echo $CI_REGISTRY_PASSWORD | nix run .#pkgs.x86_64-linux.skopeo -- login --username=$CI_REGISTRY_USER --password-stdin $CI_REGISTRY
     - mkdir -p /var/tmp
   script:
-    - export IMAGE=$(nix build --no-link -L --print-out-paths .#dockerImages.${IMAGE_NAME})
+    - export IMAGE=$(nix build --no-link -L --print-out-paths .#dockerImage)
     - nix run .#pkgs.x86_64-linux.skopeo -- copy --insecure-policy docker-archive://${IMAGE} docker://${CI_REGISTRY_IMAGE}/${IMAGE_NAME}:${CI_COMMIT_SHA}
   rules:
     - if: $CI_MERGE_REQUEST_IID
