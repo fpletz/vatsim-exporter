@@ -1,0 +1,32 @@
+default:
+  timeout: 30m
+  image: nixpkgs/nix-flakes:latest
+
+stages:
+  - build
+  - deploy
+
+.image:
+  stage: build
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | nix run .#pkgs.x86_64-linux.skopeo -- login --username=$CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - mkdir -p /var/tmp
+  script:
+    - export IMAGE=$(nix build --no-link -L --print-out-paths .#dockerImage)
+    - nix run .#pkgs.x86_64-linux.skopeo -- copy --insecure-policy docker-archive://${IMAGE} docker://${CI_REGISTRY_IMAGE}/${IMAGE_NAME}:${CI_COMMIT_SHA}
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+exporter-image:
+  extends: .image
+  variables:
+    IMAGE_NAME: vatsim-exporter
+
+push-production:
+  stage: deploy
+  script:
+    - "git remote set-url origin https://gitlab-ci:$GITLAB_PUSH_TOKEN@${CI_PROJECT_URL:8}.git"
+    - "git push origin HEAD:production"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
