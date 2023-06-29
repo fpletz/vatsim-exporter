@@ -1,6 +1,11 @@
 [package]
 name = "vatsim-exporter"
 version = "0.1.0"
+description = "Prometheus exporter for VATSIM data feed"
+homepage = "https://github.com/fpletz/vatsim-exporter"
+repository = "https://github.com/fpletz/vatsim-exporter"
+readme = "README.md"
+license = "MIT"
 edition = "2021"
 
 [dependencies]
