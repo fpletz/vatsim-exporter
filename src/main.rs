@@ -1,5 +1,6 @@
 use chrono::Utc;
 use futures::lock::Mutex;
+use metrics_util::MetricKindMask;
 use std::collections::HashMap;
 use std::net::{AddrParseError, SocketAddr};
 use std::sync::Arc;
@@ -205,6 +206,7 @@ async fn get_vatsim_data(
 
 fn app() -> axum::Router {
     let recorder_handle = PrometheusBuilder::new()
+        .idle_timeout(MetricKindMask::ALL, Some(Duration::from_secs(40)))
         .install_recorder()
         .expect("failed to install Prometheus recorder");
     let app_state = AppState {
