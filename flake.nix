@@ -31,7 +31,7 @@
       src = craneLib.cleanCargoSource ./.;
       cargoArtifacts = craneLib.buildDepsOnly {
         inherit src;
-        pname = "vastsim-exporter";
+        pname = "vatsim-exporter";
       };
       vatsim-exporter = craneLib.buildPackage {
         inherit src cargoArtifacts;
