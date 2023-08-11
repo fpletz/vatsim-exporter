@@ -37,7 +37,6 @@
         inherit src cargoArtifacts;
       };
     in {
-      inherit pkgs;
       packages = {
         default = vatsim-exporter;
 
