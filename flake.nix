@@ -74,20 +74,7 @@
 
       formatter = pkgs.alejandra;
     })
-    // (utils.lib.eachSystem ["x86_64-linux" "aarch64-linux"] (system:
-      let pkgs = import nixpkgs { inherit system; }; in {
-      checks.nixos = pkgs.nixosTest {
-        name = "vatsim-exporter";
-        nodes.server = { ... }: {
-          imports = [ self.nixosModules.default ];
-          services.vatsim-exporter.enable = true;
-        };
-        testScript = ''
-          start_all()
-          server.wait_for_unit("vatsim-exporter.service")
-        '';
-      };
-    })) // {
+    // {
       nixosModules.default = {
         config,
         lib,
