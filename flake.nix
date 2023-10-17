@@ -60,6 +60,11 @@
 
       apps = {
         inherit (argocd-nix-flakes-plugin.apps.${system}) tankaShow tankaEval;
+        ci-check = utils.lib.mkApp {
+          drv = pkgs.writers.writeBashBin "ci-check" ''
+            ${pkgs.lib.getExe nix-fast-build.packages.${system}.default} --no-nom --skip-cached
+          '';
+        };
       };
 
       devShells.default = pkgs.mkShell {
