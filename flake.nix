@@ -2,7 +2,7 @@
   description = "VATSIM Prometheus Exporter";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
     argocd-nix-flakes-plugin = {
       url = "github:mayflower/argocd-nix-flakes-plugin";
@@ -14,6 +14,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "utils";
     };
+    nix-fast-build = {
+      url = "github:Mic92/nix-fast-build";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -22,9 +26,10 @@
     utils,
     crane,
     argocd-nix-flakes-plugin,
+    nix-fast-build,
     ...
   }:
-    utils.lib.eachDefaultSystem (system: let
+    utils.lib.eachSystem ["x86_64-linux" "aarch64-linux"] (system: let
       pkgs = import nixpkgs {inherit system;};
       craneLib = crane.lib.${system};
 
@@ -35,6 +40,7 @@
       };
       vatsim-exporter = craneLib.buildPackage {
         inherit src cargoArtifacts;
+        meta.mainProgram = "vatsim-exporter";
       };
     in {
       packages = {
@@ -68,11 +74,32 @@
           rustfmt
           sops
           tanka
+          nix-fast-build.packages.${system}.default
         ];
         RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
       };
 
       formatter = pkgs.alejandra;
+
+      nixosTests.default = pkgs.nixosTest {
+        name = "vatsim-exporter-test";
+        nodes.machine = {...}: {
+          nixpkgs.system = system;
+          imports = [self.nixosModules.default];
+          services.vatsim-exporter.enable = true;
+        };
+        testScript = ''
+          machine.wait_for_unit("default.target")
+        '';
+      };
+
+      checks = {
+        package = self.packages.${system}.default;
+        devShell = self.devShells.${system}.default;
+
+        # only checks evaluation
+        nixosTest = self.nixosTests.${system}.default.driver;
+      };
     })
     // {
       nixosModules.default = {
@@ -86,6 +113,10 @@
         options = {
           services.vatsim-exporter = {
             enable = lib.mkEnableOption "VATSIM Prometheus Exporter";
+            package = lib.mkOption {
+              type = lib.types.package;
+              default = self.packages.${config.nixpkgs.system}.default;
+            };
           };
         };
 
@@ -93,7 +124,7 @@
           systemd.services.vatsim-exporter = {
             wantedBy = ["multi-user.target"];
             serviceConfig = {
-              ExecStart = "${self.packages.${config.nixpkgs.system}.default}/bin/vatsim-exporter";
+              ExecStart = "${lib.getExe cfg.package}";
               DynamicUser = true;
               Restart = "always";
               RestartSec = "2s";

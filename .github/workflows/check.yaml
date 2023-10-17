@@ -15,5 +15,5 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v6
       - uses: DeterminateSystems/magic-nix-cache-action@v2
-      - name: Run flake check
-        run: nix flake check --no-update-lock-file
+      - name: Build flake check
+        run: nix develop --command nix-fast-build --no-nom
