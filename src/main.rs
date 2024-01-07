@@ -151,9 +151,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
     }
 }
 
-async fn get_vatsim_metrics(State(state): State<SharedState>) -> String {
-    let mut app_state = state.lock().await;
-
+async fn update_vatsim_data(app_state: &mut AppState) -> () {
     if app_state.vatsim_data.is_none()
         || app_state
             .vatsim_data
@@ -189,6 +187,11 @@ async fn get_vatsim_metrics(State(state): State<SharedState>) -> String {
             }
         }
     }
+}
+
+async fn get_vatsim_metrics(State(state): State<SharedState>) -> String {
+    let mut app_state = state.lock().await;
+    update_vatsim_data(&mut app_state).await;
 
     app_state.recorder_handle.render()
 }
@@ -196,7 +199,9 @@ async fn get_vatsim_metrics(State(state): State<SharedState>) -> String {
 async fn get_vatsim_data(
     State(state): State<SharedState>,
 ) -> Result<Json<VatsimStatus>, StatusCode> {
-    let app_state = state.lock().await;
+    let mut app_state = state.lock().await;
+    update_vatsim_data(&mut app_state).await;
+
     match &app_state.vatsim_data {
         Some(data) => Ok(Json(data.clone())),
         _ => Err(StatusCode::NOT_FOUND),

@@ -133,7 +133,7 @@ pub struct Prefile {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Server {
+pub struct VatsimServer {
     pub client_connections_allowed: bool,
     pub hostname_or_ip: String,
     pub ident: String,
@@ -151,5 +151,5 @@ pub struct VatsimStatus {
     pub facilities: Vec<Facility>,
     pub pilot_ratings: Vec<PilotRating>,
     pub prefiles: Vec<Prefile>,
-    pub servers: Vec<Server>,
+    pub servers: Vec<VatsimServer>,
 }
