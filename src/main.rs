@@ -2,18 +2,17 @@ use chrono::Utc;
 use futures::lock::Mutex;
 use metrics_util::MetricKindMask;
 use std::collections::HashMap;
-use std::net::{AddrParseError, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
 use env_logger::{Builder, Env};
 use log::{debug, error, info};
 
-use axum::{extract::State, routing::get, Json};
+use axum::{extract::State, routing::get, http::StatusCode, Json};
 use metrics::{counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
-use reqwest::{header, Client, StatusCode};
+use reqwest::{header, Client};
 
 mod vatsim;
 use vatsim::VatsimStatus;
@@ -226,10 +225,9 @@ fn app() -> axum::Router {
 async fn main() {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let addr = ("[::]:9185".parse() as Result<SocketAddr, AddrParseError>).unwrap();
+    let listener = tokio::net::TcpListener::bind("[::]:9185").await.unwrap();
 
-    axum::Server::bind(&addr)
-        .serve(app().into_make_service())
+    axum::serve(listener, app().into_make_service())
         .await
         .unwrap()
 }
