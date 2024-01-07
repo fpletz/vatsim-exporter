@@ -1,28 +1,5 @@
 {
   "nodes": {
-    "argocd-nix-flakes-plugin": {
-      "inputs": {
-        "flake-utils": [
-          "utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1675903233,
-        "narHash": "sha256-l2pnDhafMZGqYQvyeUyq4siDn5fZad7CtplbDboMRno=",
-        "owner": "mayflower",
-        "repo": "argocd-nix-flakes-plugin",
-        "rev": "5cd6b91ae1c8c7557988a8156bfb8c0a2b67e3e8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mayflower",
-        "repo": "argocd-nix-flakes-plugin",
-        "type": "github"
-      }
-    },
     "crane": {
       "inputs": {
         "nixpkgs": [
@@ -119,7 +96,6 @@
     },
     "root": {
       "inputs": {
-        "argocd-nix-flakes-plugin": "argocd-nix-flakes-plugin",
         "crane": "crane",
         "nix-fast-build": "nix-fast-build",
         "nixpkgs": "nixpkgs",

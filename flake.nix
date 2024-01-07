@@ -4,15 +4,9 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
-    argocd-nix-flakes-plugin = {
-      url = "github:mayflower/argocd-nix-flakes-plugin";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "utils";
-    };
     crane = {
       url = "github:ipetkov/crane";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "utils";
     };
     nix-fast-build = {
       url = "github:Mic92/nix-fast-build";
@@ -25,7 +19,6 @@
     nixpkgs,
     utils,
     crane,
-    argocd-nix-flakes-plugin,
     nix-fast-build,
     ...
   }:
@@ -59,7 +52,6 @@
       };
 
       apps = {
-        inherit (argocd-nix-flakes-plugin.apps.${system}) tankaShow tankaEval;
         ci-check = utils.lib.mkApp {
           drv = pkgs.writers.writeBashBin "ci-check" ''
             ${pkgs.lib.getExe nix-fast-build.packages.${system}.default} --no-nom --skip-cached
@@ -71,14 +63,10 @@
         nativeBuildInputs = with pkgs; [
           cargo
           cargo-watch
-          jsonnet
-          jsonnet-bundler
           rust-analyzer
           rustPackages.clippy
           rustc
           rustfmt
-          sops
-          tanka
           nix-fast-build.packages.${system}.default
         ];
         RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
