@@ -8,7 +8,7 @@ use std::time::Duration;
 use env_logger::{Builder, Env};
 use log::{debug, error, info};
 
-use axum::{extract::State, routing::get, http::StatusCode, Json};
+use axum::{extract::State, http::StatusCode, routing::get, Json};
 use metrics::{counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
@@ -152,25 +152,20 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
 }
 
 async fn update_vatsim_data(app_state: &mut AppState) -> () {
+    let last_update_timestamp = app_state
+        .vatsim_data
+        .as_ref()
+        .unwrap()
+        .general
+        .update_timestamp;
+
     if app_state.vatsim_data.is_none()
-        || app_state
-            .vatsim_data
-            .as_ref()
-            .unwrap()
-            .general
-            .update_timestamp
-            + chrono::Duration::seconds(40)
-            < Utc::now()
+        || last_update_timestamp + chrono::Duration::seconds(40) < Utc::now()
     {
         if app_state.vatsim_data.is_some() {
             debug!(
                 "trying to fetch new vatsim data: {} vs {}",
-                app_state
-                    .vatsim_data
-                    .as_ref()
-                    .unwrap()
-                    .general
-                    .update_timestamp,
+                last_update_timestamp,
                 Utc::now()
             );
         }
