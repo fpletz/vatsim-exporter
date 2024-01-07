@@ -10,7 +10,7 @@ use env_logger::{Builder, Env};
 use log::{debug, error, info};
 
 use axum::{extract::State, routing::get, Json};
-use metrics::{absolute_counter, gauge};
+use metrics::{counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
 use reqwest::{header, Client, StatusCode};
@@ -80,7 +80,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         });
 
     for (icao, c) in arr_map {
-        gauge!("vatsim_airport_arrivals_current", c as f64, "icao" => String::from(icao), "state" => "online");
+        gauge!("vatsim_airport_arrivals_current", "icao" => String::from(icao), "state" => "online").set(c as f64);
     }
 
     let mut arr_prefile_map: HashMap<&str, u32> = HashMap::new();
@@ -94,7 +94,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         });
 
     for (icao, c) in arr_prefile_map {
-        gauge!("vatsim_airport_arrivals_current", c as f64, "icao" => String::from(icao), "state" => "prefiled");
+        gauge!("vatsim_airport_arrivals_current", "icao" => String::from(icao), "state" => "prefiled").set(c as f64);
     }
 
     let mut adep_map: HashMap<&str, u32> = HashMap::new();
@@ -108,7 +108,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         });
 
     for (icao, c) in adep_map {
-        gauge!("vatsim_airport_departures_current", c as f64, "icao" => String::from(icao), "state" => "online");
+        gauge!("vatsim_airport_departures_current", "icao" => String::from(icao), "state" => "online").set(c as f64);
     }
 
     let mut adep_prefile_map: HashMap<&str, u32> = HashMap::new();
@@ -122,33 +122,33 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         });
 
     for (icao, c) in adep_prefile_map {
-        gauge!("vatsim_airport_departures_current", c as f64, "icao" => String::from(icao), "state" => "prefiled");
+        gauge!("vatsim_airport_departures_current", "icao" => String::from(icao), "state" => "prefiled").set(c as f64);
     }
 
     for controller in &vatsim_data.controllers {
         let time_online = Utc::now() - controller.logon_time;
-        absolute_counter!("vatsim_controller_online_seconds_count", time_online.num_seconds() as u64,
+        counter!("vatsim_controller_online_seconds_count",
           "callsign" => controller.callsign.clone(), "cid" => controller.cid.to_string(), "name" => controller.name.clone(),
           "facility" => vatsim_data.facilities.iter().find(|f| f.id == controller.facility).unwrap().short.clone()
-        );
+        ).absolute(time_online.num_seconds() as u64);
     }
 
     for pilot in &vatsim_data.pilots {
-        gauge!("vatsim_pilot_groundspeed", pilot.groundspeed as f64,
+        gauge!("vatsim_pilot_groundspeed",
           "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
-        );
-        gauge!("vatsim_pilot_altitude", pilot.altitude as f64,
+        ).set(pilot.groundspeed as f64);
+        gauge!("vatsim_pilot_altitude",
           "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
-        );
-        gauge!("vatsim_pilot_heading", pilot.heading as f64,
+        ).set(pilot.altitude as f64);
+        gauge!("vatsim_pilot_heading",
           "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
-        );
-        gauge!("vatsim_pilot_latitude", pilot.latitude,
+        ).set(pilot.heading as f64);
+        gauge!("vatsim_pilot_latitude",
           "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
-        );
-        gauge!("vatsim_pilot_longitude", pilot.longitude,
+        ).set(pilot.latitude);
+        gauge!("vatsim_pilot_longitude",
           "callsign" => pilot.callsign.clone(), "cid" => pilot.cid.to_string(), "name" => pilot.name.clone(),
-        );
+        ).set(pilot.longitude);
     }
 }
 

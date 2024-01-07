@@ -1,4 +1,4 @@
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
 
 fn deserialize_timestamp_without_zulu<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
@@ -10,7 +10,8 @@ where
         // no ms present :(
         s.push_str(".0Z");
     }
-    Utc.datetime_from_str(&s, "%+")
+    DateTime::parse_from_str(&s, "%+")
+        .map(|dt| dt.with_timezone(&Utc))
         .map_err(serde::de::Error::custom)
 }
 
