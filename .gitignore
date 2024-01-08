@@ -2,3 +2,4 @@
 /.direnv
 /vendor
 result*
+.pre-commit-config.yaml

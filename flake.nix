@@ -3,127 +3,166 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    utils.url = "github:numtide/flake-utils";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     crane = {
       url = "github:ipetkov/crane";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pre-commit-hooks = {
+      url = "github:cachix/pre-commit-hooks.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-stable.follows = "nixpkgs";
+      };
+    };
     nix-fast-build = {
       url = "github:Mic92/nix-fast-build";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+      };
     };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    utils,
-    crane,
-    nix-fast-build,
-    ...
-  }:
-    utils.lib.eachSystem ["x86_64-linux" "aarch64-linux"] (system: let
-      pkgs = import nixpkgs {inherit system;};
-      craneLib = crane.lib.${system};
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
 
-      src = craneLib.cleanCargoSource ./.;
-      cargoArtifacts = craneLib.buildDepsOnly {
-        inherit src;
-        pname = "vatsim-exporter";
-      };
-      vatsim-exporter = craneLib.buildPackage {
-        inherit src cargoArtifacts;
-        meta.mainProgram = "vatsim-exporter";
-      };
-    in {
-      packages = {
-        default = vatsim-exporter;
+      imports = [
+        inputs.treefmt-nix.flakeModule
+        inputs.pre-commit-hooks.flakeModule
+      ];
 
-        dockerImage = pkgs.dockerTools.buildImage {
-          name = "vatsim-exporter";
-          tag = "latest";
-          copyToRoot = [vatsim-exporter];
+      perSystem = { self', pkgs, system, config, lib, ... }:
+        let
+          craneLib = inputs.crane.lib.${system};
 
-          config = {
-            Cmd = ["/bin/vatsim-exporter"];
-            ExposedPorts."9185/tcp" = {};
+          src = craneLib.cleanCargoSource ./.;
+          cargoArtifacts = craneLib.buildDepsOnly {
+            inherit src;
+            pname = "vatsim-exporter";
           };
-        };
-      };
+          vatsim-exporter = craneLib.buildPackage {
+            inherit src cargoArtifacts;
+            meta.mainProgram = "vatsim-exporter";
+          };
+        in
+        {
+          packages = {
+            default = vatsim-exporter;
 
-      apps = {
-        ci-check = utils.lib.mkApp {
-          drv = pkgs.writers.writeBashBin "ci-check" ''
-            ${pkgs.lib.getExe nix-fast-build.packages.${system}.default} --no-nom --skip-cached
-          '';
-        };
-      };
+            dockerImage = pkgs.dockerTools.buildImage {
+              name = "vatsim-exporter";
+              tag = "latest";
+              copyToRoot = [ vatsim-exporter ];
 
-      devShells.default = pkgs.mkShell {
-        nativeBuildInputs = with pkgs; [
-          cargo
-          cargo-watch
-          rust-analyzer
-          rustPackages.clippy
-          rustc
-          rustfmt
-          nix-fast-build.packages.${system}.default
-        ];
-        RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
-      };
-
-      formatter = pkgs.alejandra;
-
-      nixosTests.default = pkgs.nixosTest {
-        name = "vatsim-exporter-test";
-        nodes.machine = {...}: {
-          nixpkgs.system = system;
-          imports = [self.nixosModules.default];
-          services.vatsim-exporter.enable = true;
-        };
-        testScript = ''
-          machine.wait_for_unit("default.target")
-        '';
-      };
-
-      checks = {
-        package = self.packages.${system}.default;
-        devShell = self.devShells.${system}.default;
-
-        # only checks evaluation
-        nixosTest = self.nixosTests.${system}.default.driver;
-      };
-    })
-    // {
-      nixosModules.default = {
-        config,
-        lib,
-        pkgs,
-        ...
-      }: let
-        cfg = config.services.vatsim-exporter;
-      in {
-        options = {
-          services.vatsim-exporter = {
-            enable = lib.mkEnableOption "VATSIM Prometheus Exporter";
-            package = lib.mkOption {
-              type = lib.types.package;
-              default = self.packages.${config.nixpkgs.system}.default;
+              config = {
+                Cmd = [ "/bin/vatsim-exporter" ];
+                ExposedPorts."9185/tcp" = { };
+              };
             };
           };
-        };
 
-        config = lib.mkIf cfg.enable {
-          systemd.services.vatsim-exporter = {
-            wantedBy = ["multi-user.target"];
-            serviceConfig = {
-              ExecStart = "${lib.getExe cfg.package}";
-              DynamicUser = true;
-              Restart = "always";
-              RestartSec = "2s";
+          apps = {
+            ci-check.program = pkgs.writers.writeBashBin "ci-check" ''
+              ${pkgs.lib.getExe inputs.nix-fast-build.packages.${system}.default} --no-nom --skip-cached
+            '';
+          };
+
+          checks = {
+            package = self'.packages.default;
+            devShell = self'.devShells.default;
+            nixosTest = pkgs.nixosTest {
+              name = "vatsim-exporter-test";
+              nodes.machine = { ... }: {
+                nixpkgs.system = system;
+                imports = [ inputs.self.nixosModules.default ];
+                services.vatsim-exporter.enable = true;
+              };
+              testScript = ''
+                machine.wait_for_unit("default.target")
+                machine.wait_for_open_port(9185)
+              '';
             };
           };
+
+          formatter = pkgs.nixpkgs-fmt;
+
+          pre-commit.settings.hooks.treefmt.enable = true;
+          treefmt = {
+            projectRootFile = "flake.lock";
+
+            settings.formatter = {
+              nix = {
+                command = "sh";
+                options = [
+                  "-eucx"
+                  ''
+                    # First deadnix
+                    ${lib.getExe pkgs.deadnix} --edit "$@"
+                    # Then nixpkgs-fmt
+                    ${lib.getExe pkgs.nixpkgs-fmt} "$@"
+                  ''
+                  "--"
+                ];
+                includes = [ "*.nix" ];
+              };
+            };
+          };
+
+          devShells.default = craneLib.devShell {
+            packages = with pkgs; [
+              cargo-watch
+              rust-analyzer
+              inputs.nix-fast-build.packages.${system}.default
+              config.treefmt.build.wrapper
+            ];
+            RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
+            shellHook = ''
+              ${config.pre-commit.installationScript}
+            '';
+          };
         };
+
+      flake = {
+        nixosModules.default =
+          { config
+          , lib
+          , ...
+          }:
+          let
+            cfg = config.services.vatsim-exporter;
+          in
+          {
+            options = {
+              services.vatsim-exporter = {
+                enable = lib.mkEnableOption "VATSIM Prometheus Exporter";
+                package = lib.mkOption {
+                  type = lib.types.package;
+                  default = inputs.self.packages.${config.nixpkgs.system}.default;
+                };
+              };
+            };
+
+            config = lib.mkIf cfg.enable {
+              systemd.services.vatsim-exporter = {
+                wantedBy = [ "multi-user.target" ];
+                serviceConfig = {
+                  ExecStart = "${lib.getExe cfg.package}";
+                  DynamicUser = true;
+                  Restart = "always";
+                  RestartSec = "2s";
+                };
+              };
+            };
+          };
       };
     };
 }
