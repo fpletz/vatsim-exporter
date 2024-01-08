@@ -151,7 +151,7 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
     }
 }
 
-async fn update_vatsim_data(app_state: &mut AppState) -> () {
+async fn update_vatsim_data(app_state: &mut AppState) {
     let last_update_timestamp = app_state
         .vatsim_data
         .as_ref()
