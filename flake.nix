@@ -44,15 +44,18 @@
         let
           craneLib = inputs.crane.lib.${system};
 
-          src = craneLib.cleanCargoSource ./.;
-          cargoArtifacts = craneLib.buildDepsOnly {
+          src = craneLib.cleanCargoSource (craneLib.path ./.);
+          commonArgs = {
             inherit src;
-            pname = "vatsim-exporter";
+            strictDeps = true;
           };
-          vatsim-exporter = craneLib.buildPackage {
+          cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
+            pname = "vatsim-exporter";
+          });
+          vatsim-exporter = craneLib.buildPackage (commonArgs // {
             inherit src cargoArtifacts;
             meta.mainProgram = "vatsim-exporter";
-          };
+          });
         in
         {
           packages = {
@@ -79,6 +82,16 @@
           checks = {
             package = self'.packages.default;
             devShell = self'.devShells.default;
+
+            clippy = craneLib.cargoClippy (commonArgs // {
+              inherit cargoArtifacts;
+              cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+            });
+
+            cargo-fmt = craneLib.cargoFmt {
+              inherit src;
+            };
+
             nixosTest = pkgs.nixosTest {
               name = "vatsim-exporter-test";
               nodes.machine = { ... }: {
@@ -113,6 +126,11 @@
                   "--"
                 ];
                 includes = [ "*.nix" ];
+              };
+              rustfmt = {
+                command = pkgs.rustfmt;
+                options = [ "--edition" "2021" ];
+                includes = [ "*.rs" ];
               };
             };
           };
