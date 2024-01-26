@@ -152,12 +152,10 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
 }
 
 async fn update_vatsim_data(app_state: &mut AppState) {
-    let last_update_timestamp = app_state
-        .vatsim_data
-        .as_ref()
-        .unwrap()
-        .general
-        .update_timestamp;
+    let last_update_timestamp = match app_state.vatsim_data.as_ref() {
+        Some(data) => data.general.update_timestamp,
+        _ => chrono::DateTime::from_timestamp(0, 0).unwrap(),
+    };
 
     if app_state.vatsim_data.is_none()
         || last_update_timestamp + chrono::Duration::seconds(40) < Utc::now()
