@@ -48,6 +48,8 @@
           commonArgs = {
             inherit src;
             strictDeps = true;
+            nativeBuildInputs = [ pkgs.pkg-config ];
+            buildInputs = [ pkgs.openssl ];
           };
           cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
             pname = "vatsim-exporter";
@@ -141,6 +143,8 @@
               rust-analyzer
               inputs.nix-fast-build.packages.${system}.default
               config.treefmt.build.wrapper
+              pkg-config
+              openssl
             ];
             RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
             shellHook = ''
