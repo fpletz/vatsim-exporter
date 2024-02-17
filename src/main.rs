@@ -17,6 +17,9 @@ use reqwest::{header, Client};
 mod vatsim;
 use vatsim::VatsimStatus;
 
+mod config;
+use config::build_config;
+
 type SharedState = Arc<Mutex<AppState>>;
 
 struct AppState {
@@ -220,12 +223,24 @@ fn app() -> axum::Router {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), String> {
+    let config = build_config();
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let listener = tokio::net::TcpListener::bind("[::]:9185").await.unwrap();
+    let listener = match tokio::net::TcpListener::bind(config.listen.clone()).await {
+        Ok(listener) => {
+            info!("Listening on {}", config.listen);
+            listener
+        }
+        Err(e) => {
+            error!("Failed to listen on {}: {}", config.listen, e.to_string());
+            return Err(e.to_string());
+        }
+    };
 
     axum::serve(listener, app().into_make_service())
         .await
-        .unwrap()
+        .unwrap();
+
+    Ok(())
 }
