@@ -158,7 +158,7 @@ async fn update_vatsim_data(app_state: &mut AppState) {
     };
 
     if app_state.vatsim_data.is_none()
-        || last_update_timestamp + chrono::Duration::seconds(40) < Utc::now()
+        || last_update_timestamp + chrono::TimeDelta::try_seconds(40).unwrap() < Utc::now()
     {
         if app_state.vatsim_data.is_some() {
             debug!(
