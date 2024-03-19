@@ -28,7 +28,8 @@
     };
   };
 
-  outputs = inputs:
+  outputs =
+    inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
@@ -40,7 +41,16 @@
         inputs.pre-commit-hooks.flakeModule
       ];
 
-      perSystem = { self', pkgs, system, config, lib, ... }:
+      perSystem =
+        {
+          self',
+          inputs',
+          pkgs,
+          system,
+          config,
+          lib,
+          ...
+        }:
         let
           craneLib = inputs.crane.lib.${system};
 
@@ -51,13 +61,14 @@
             nativeBuildInputs = [ pkgs.pkg-config ];
             buildInputs = [ pkgs.openssl ];
           };
-          cargoArtifacts = craneLib.buildDepsOnly (commonArgs // {
-            pname = "vatsim-exporter";
-          });
-          vatsim-exporter = craneLib.buildPackage (commonArgs // {
-            inherit src cargoArtifacts;
-            meta.mainProgram = "vatsim-exporter";
-          });
+          cargoArtifacts = craneLib.buildDepsOnly (commonArgs // { pname = "vatsim-exporter"; });
+          vatsim-exporter = craneLib.buildPackage (
+            commonArgs
+            // {
+              inherit src cargoArtifacts;
+              meta.mainProgram = "vatsim-exporter";
+            }
+          );
         in
         {
           packages = {
@@ -77,7 +88,7 @@
 
           apps = {
             ci-check.program = pkgs.writers.writeBashBin "ci-check" ''
-              ${pkgs.lib.getExe inputs.nix-fast-build.packages.${system}.default} --no-nom --skip-cached
+              ${pkgs.lib.getExe inputs'.nix-fast-build.packages.default} --no-nom --skip-cached
             '';
           };
 
@@ -85,22 +96,25 @@
             package = self'.packages.default;
             devShell = self'.devShells.default;
 
-            clippy = craneLib.cargoClippy (commonArgs // {
-              inherit cargoArtifacts;
-              cargoClippyExtraArgs = "--all-targets -- --deny warnings";
-            });
+            clippy = craneLib.cargoClippy (
+              commonArgs
+              // {
+                inherit cargoArtifacts;
+                cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+              }
+            );
 
-            cargo-fmt = craneLib.cargoFmt {
-              inherit src;
-            };
+            cargo-fmt = craneLib.cargoFmt { inherit src; };
 
             nixosTest = pkgs.nixosTest {
               name = "vatsim-exporter-test";
-              nodes.machine = { ... }: {
-                nixpkgs.system = system;
-                imports = [ inputs.self.nixosModules.default ];
-                services.vatsim-exporter.enable = true;
-              };
+              nodes.machine =
+                { ... }:
+                {
+                  nixpkgs.system = system;
+                  imports = [ inputs.self.nixosModules.default ];
+                  services.vatsim-exporter.enable = true;
+                };
               testScript = ''
                 machine.wait_for_unit("default.target")
                 machine.wait_for_open_port(9185)
@@ -108,30 +122,29 @@
             };
           };
 
-          formatter = pkgs.nixpkgs-fmt;
+          formatter = pkgs.nixfmt-rfc-style;
 
-          pre-commit.settings.hooks.treefmt.enable = true;
+          pre-commit = {
+            check.enable = true;
+            settings.hooks.treefmt = {
+              enable = true;
+              package = config.treefmt.build.wrapper;
+            };
+          };
           treefmt = {
             projectRootFile = "flake.lock";
 
             settings.formatter = {
               nix = {
-                command = "sh";
-                options = [
-                  "-eucx"
-                  ''
-                    # First deadnix
-                    ${lib.getExe pkgs.deadnix} --edit "$@"
-                    # Then nixpkgs-fmt
-                    ${lib.getExe pkgs.nixpkgs-fmt} "$@"
-                  ''
-                  "--"
-                ];
+                command = pkgs.nixfmt-rfc-style;
                 includes = [ "*.nix" ];
               };
               rustfmt = {
                 command = pkgs.rustfmt;
-                options = [ "--edition" "2021" ];
+                options = [
+                  "--edition"
+                  "2021"
+                ];
                 includes = [ "*.rs" ];
               };
             };
@@ -155,10 +168,7 @@
 
       flake = {
         nixosModules.default =
-          { config
-          , lib
-          , ...
-          }:
+          { config, lib, ... }:
           let
             cfg = config.services.vatsim-exporter;
           in
