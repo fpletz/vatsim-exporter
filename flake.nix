@@ -48,11 +48,10 @@
           pkgs,
           system,
           config,
-          lib,
           ...
         }:
         let
-          craneLib = inputs.crane.lib.${system};
+          craneLib = inputs.crane.mkLib inputs.nixpkgs.legacyPackages.${system};
 
           src = craneLib.cleanCargoSource (craneLib.path ./.);
           commonArgs = {
@@ -151,13 +150,13 @@
           };
 
           devShells.default = craneLib.devShell {
-            packages = with pkgs; [
-              cargo-watch
-              rust-analyzer
+            packages = [
+              pkgs.cargo-watch
+              pkgs.rust-analyzer
               inputs.nix-fast-build.packages.${system}.default
               config.treefmt.build.wrapper
-              pkg-config
-              openssl
+              pkgs.pkg-config
+              pkgs.openssl
             ];
             RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
             shellHook = ''
