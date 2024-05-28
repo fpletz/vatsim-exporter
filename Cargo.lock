@@ -812,16 +812,6 @@ checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
 
 [[package]]
 name = "metrics"
-version = "0.22.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2be3cbd384d4e955b231c895ce10685e3d8260c5ccffae898c96c723b0772835"
-dependencies = [
- "ahash",
- "portable-atomic",
-]
-
-[[package]]
-name = "metrics"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "884adb57038347dfbaf2d5065887b6cf4312330dc8e94bc30a1a839bd79d3261"
@@ -832,31 +822,16 @@ dependencies = [
 
 [[package]]
 name = "metrics-exporter-prometheus"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d58e362dc7206e9456ddbcdbd53c71ba441020e62104703075a69151e38d85f"
+checksum = "26eb45aff37b45cff885538e1dcbd6c2b462c04fe84ce0155ea469f325672c98"
 dependencies = [
  "base64",
  "indexmap",
- "metrics 0.22.3",
- "metrics-util 0.16.3",
+ "metrics",
+ "metrics-util",
  "quanta",
  "thiserror",
-]
-
-[[package]]
-name = "metrics-util"
-version = "0.16.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b07a5eb561b8cbc16be2d216faf7757f9baf3bfb94dbb0fae3df8387a5bb47f"
-dependencies = [
- "crossbeam-epoch",
- "crossbeam-utils",
- "hashbrown",
- "metrics 0.22.3",
- "num_cpus",
- "quanta",
- "sketches-ddsketch",
 ]
 
 [[package]]
@@ -870,7 +845,7 @@ dependencies = [
  "crossbeam-utils",
  "hashbrown",
  "indexmap",
- "metrics 0.23.0",
+ "metrics",
  "num_cpus",
  "ordered-float",
  "quanta",
@@ -1694,9 +1669,9 @@ dependencies = [
  "figment",
  "futures",
  "log",
- "metrics 0.23.0",
+ "metrics",
  "metrics-exporter-prometheus",
- "metrics-util 0.17.0",
+ "metrics-util",
  "reqwest",
  "serde",
  "serde_json",
