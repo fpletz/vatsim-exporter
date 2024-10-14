@@ -843,6 +843,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "metrics"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ae428771d17306715c5091d446327d1cfdedc82185c65ba8423ab404e45bf10"
+dependencies = [
+ "ahash",
+ "portable-atomic",
+]
+
+[[package]]
 name = "metrics-exporter-prometheus"
 version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -850,7 +860,7 @@ checksum = "b4f0c8427b39666bf970460908b213ec09b3b350f20c0c2eabcbba51704a08e6"
 dependencies = [
  "base64",
  "indexmap",
- "metrics",
+ "metrics 0.23.0",
  "metrics-util",
  "quanta",
  "thiserror",
@@ -867,7 +877,7 @@ dependencies = [
  "crossbeam-utils",
  "hashbrown",
  "indexmap",
- "metrics",
+ "metrics 0.23.0",
  "num_cpus",
  "ordered-float",
  "quanta",
@@ -1778,7 +1788,7 @@ dependencies = [
  "figment",
  "futures",
  "log",
- "metrics",
+ "metrics 0.24.0",
  "metrics-exporter-prometheus",
  "metrics-util",
  "reqwest",
