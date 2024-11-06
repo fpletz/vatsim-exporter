@@ -9,7 +9,7 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
-metrics = "0.23"
+metrics = "0.24"
 metrics-util = "0.17"
 metrics-exporter-prometheus = { version = "0.15", default-features = false }
 env_logger = "0.11"
