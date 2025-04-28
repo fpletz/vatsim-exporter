@@ -57,14 +57,14 @@ async fn fetch_vatsim_metrics(etag: &String) -> (Option<VatsimStatus>, Option<St
                         (Some(data), new_etag)
                     }
                     Err(e) => {
-                        error!("failed to parse vatsim data JSON: {}", e.to_string());
+                        error!("failed to parse vatsim data JSON: {}", e);
                         (None, new_etag)
                     }
                 }
             }
         }
         Err(e) => {
-            error!("fetching vatsim data failed: {}", e.to_string());
+            error!("fetching vatsim data failed: {}", e);
             (None, None)
         }
     }
@@ -233,7 +233,7 @@ async fn main() -> Result<(), String> {
             listener
         }
         Err(e) => {
-            error!("Failed to listen on {}: {}", config.listen, e.to_string());
+            error!("Failed to listen on {}: {}", config.listen, e);
             return Err(e.to_string());
         }
     };
