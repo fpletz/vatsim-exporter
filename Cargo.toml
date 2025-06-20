@@ -10,7 +10,7 @@ edition = "2021"
 
 [dependencies]
 metrics = "0.24"
-metrics-util = "0.19"
+metrics-util = "0.20"
 metrics-exporter-prometheus = { version = "0.17", default-features = false }
 env_logger = "0.11"
 log = "0.4"
