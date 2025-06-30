@@ -6,11 +6,11 @@ homepage = "https://github.com/fpletz/vatsim-exporter"
 repository = "https://github.com/fpletz/vatsim-exporter"
 readme = "README.md"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 metrics = "0.24"
-metrics-util = "0.19"
+metrics-util = "0.20"
 metrics-exporter-prometheus = { version = "0.17", default-features = false }
 env_logger = "0.11"
 log = "0.4"
