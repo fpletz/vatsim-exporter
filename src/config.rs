@@ -1,6 +1,6 @@
 use figment::{
-    providers::{Env, Serialized},
     Figment,
+    providers::{Env, Serialized},
 };
 use serde::{Deserialize, Serialize};
 

@@ -8,11 +8,11 @@ use std::time::Duration;
 use env_logger::{Builder, Env};
 use log::{debug, error, info};
 
-use axum::{extract::State, http::StatusCode, routing::get, Json};
+use axum::{Json, extract::State, http::StatusCode, routing::get};
 use metrics::{counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
-use reqwest::{header, Client};
+use reqwest::{Client, header};
 
 mod vatsim;
 use vatsim::VatsimStatus;

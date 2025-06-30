@@ -138,7 +138,7 @@
                 command = pkgs.rustfmt;
                 options = [
                   "--edition"
-                  "2021"
+                  "2024"
                 ];
                 includes = [ "*.rs" ];
               };
