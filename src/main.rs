@@ -57,14 +57,14 @@ async fn fetch_vatsim_metrics(etag: &String) -> (Option<VatsimStatus>, Option<St
                         (Some(data), new_etag)
                     }
                     Err(e) => {
-                        error!("failed to parse vatsim data JSON: {}", e);
+                        error!("failed to parse vatsim data JSON: {e}");
                         (None, new_etag)
                     }
                 }
             }
         }
         Err(e) => {
-            error!("fetching vatsim data failed: {}", e);
+            error!("fetching vatsim data failed: {e}");
             (None, None)
         }
     }
