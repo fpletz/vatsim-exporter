@@ -101,7 +101,7 @@
 
             cargo-fmt = craneLib.cargoFmt { inherit src; };
 
-            nixosTest = pkgs.nixosTest {
+            nixosTest = pkgs.testers.nixosTest {
               name = "vatsim-exporter-test";
               nodes.machine =
                 { ... }:
