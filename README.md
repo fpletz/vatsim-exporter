@@ -6,6 +6,7 @@ This is a Prometheus exporter for the VATSIM data feed. It includes metrics of o
  * `vatsim_airport_arrivals_current{icao,state}`
  * `vatsim_airport_departures_current{icao,state}`
  * `vatsim_controller_online_seconds_count{callsign,cid,name,facility}`
+ * `vatsim_controller_online{facility}`
  * `vatsim_pilot_altitude{callsign,cid,name}`
  * `vatsim_pilot_groundspeed{callsign,cid,name}`
  * `vatsim_pilot_heading{callsign,cid,name}`

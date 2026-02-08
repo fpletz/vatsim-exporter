@@ -127,12 +127,21 @@ async fn update_vatsim_metrics(vatsim_data: &VatsimStatus) {
         gauge!("vatsim_airport_departures_current", "icao" => String::from(icao), "state" => "prefiled").set(c as f64);
     }
 
+    let mut facility_online_map: HashMap<u8, u32> =
+        vatsim_data.facilities.iter().map(|f| (f.id, 0)).collect();
     for controller in &vatsim_data.controllers {
         let time_online = Utc::now() - controller.logon_time;
         counter!("vatsim_controller_online_seconds_count",
           "callsign" => controller.callsign.clone(), "cid" => controller.cid.to_string(), "name" => controller.name.clone(),
           "facility" => vatsim_data.facilities.iter().find(|f| f.id == controller.facility).unwrap().short.clone()
         ).absolute(time_online.num_seconds() as u64);
+
+        *facility_online_map.entry(controller.facility).or_insert(0) += 1;
+    }
+
+    for facility in &vatsim_data.facilities {
+        let count = facility_online_map.get(&facility.id).copied().unwrap_or(0);
+        gauge!("vatsim_controller_online", "facility" => facility.short.clone()).set(count as f64);
     }
 
     for pilot in &vatsim_data.pilots {
