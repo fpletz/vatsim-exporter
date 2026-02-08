@@ -117,7 +117,7 @@
             };
           };
 
-          formatter = pkgs.nixfmt-rfc-style;
+          formatter = pkgs.nixfmt;
 
           pre-commit = {
             check.enable = true;
@@ -131,7 +131,7 @@
 
             settings.formatter = {
               nix = {
-                command = pkgs.nixfmt-rfc-style;
+                command = pkgs.nixfmt;
                 includes = [ "*.nix" ];
               };
               rustfmt = {
